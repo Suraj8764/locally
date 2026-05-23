@@ -1,0 +1,58 @@
+src/AppRoot.tsx(24,10): error TS2459: Module '"./api"' declares 'Category' locally, but it is not exported.
+src/AppRoot.tsx(24,20): error TS2459: Module '"./api"' declares 'Worker' locally, but it is not exported.
+src/AppRoot.tsx(24,28): error TS2305: Module '"./api"' has no exported member 'createLead'.
+src/AppRoot.tsx(24,40): error TS2305: Module '"./api"' has no exported member 'fetchCategories'.
+src/AppRoot.tsx(24,57): error TS2305: Module '"./api"' has no exported member 'fetchNearbyWorkers'.
+src/AppRoot.tsx(110,38): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/components/booking/BookingForm.tsx(38,5): error TS2322: Type 'Resolver<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency?: boolean | undefined; imageUri?: string | undefined; }, any, { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }>' is not assignable to type 'Resolver<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, any, { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency?: boolean | undefined; imageUri?: string | undefined; }>'.
+      Type 'boolean | undefined' is not assignable to type 'boolean'.
+        Type 'undefined' is not assignable to type 'boolean'.
+src/components/booking/BookingForm.tsx(102,9): error TS2322: Type 'Control<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, any, TFieldValues>' is not assignable to type 'Control<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, any, TFieldValues> | undefined' is not assignable to type 'Resolver<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, any, { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }> | undefined'.
+      Type 'Resolver<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, any, TFieldValues>' is not assignable to type 'Resolver<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, any, { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }>'.
+        Type 'ResolverResult<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, TFieldValues> | Promise<...>' is not assignable to type 'ResolverResult<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }> | Promise<...>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }, { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }> | Promise<...>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }>'.
+              Type 'TFieldValues' is not assignable to type '{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }'.
+                Type 'FieldValues' is missing the following properties from type '{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }': address, problemDescription, date, time, isEmergency
+src/components/booking/BookingForm.tsx(229,31): error TS2345: Argument of type '(data: { address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }) => void' is not assignable to parameter of type 'SubmitHandler<TFieldValues>'.
+  Types of parameters 'data' and 'data' are incompatible.
+    Type 'TFieldValues' is not assignable to type '{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }'.
+      Type 'FieldValues' is missing the following properties from type '{ address: string; problemDescription: string; date: Date; time: Date; isEmergency: boolean; imageUri?: string | undefined; }': address, problemDescription, date, time, isEmergency
+src/components/home/CategoryCard.tsx(21,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: LinearGradientProps): LinearGradient', gave the following error.
+    Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+      Source provides no match for required element at position 0 in target.
+  Overload 2 of 2, '(props: LinearGradientProps, context: any): LinearGradient', gave the following error.
+    Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+      Source provides no match for required element at position 0 in target.
+src/components/ui/AddressAutocomplete.tsx(5,10): error TS2305: Module '"../../constants"' has no exported member 'GOOGLE_MAPS_API_KEY'.
+src/hooks/useBooking.ts(17,11): error TS2339: Property 'updateStatus' does not exist on type 'BookingState'.
+src/hooks/useNotifications.ts(8,35): error TS2322: Type 'Promise<{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: false; }>' is not assignable to type 'Promise<NotificationBehavior>'.
+  Type '{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: false; }' is missing the following properties from type 'NotificationBehavior': shouldShowBanner, shouldShowList
+src/hooks/useNotifications.ts(17,32): error TS2554: Expected 1 arguments, but got 0.
+src/hooks/useNotifications.ts(18,28): error TS2554: Expected 1 arguments, but got 0.
+src/hooks/useRealtimeBooking.ts(36,17): error TS2339: Property 'role' does not exist on type 'User'.
+src/hooks/useRealtimeBooking.ts(51,30): error TS2339: Property 'role' does not exist on type 'User'.
+src/screens/customer/BookingStatusScreen.tsx(20,26): error TS2339: Property 'updateStatus' does not exist on type 'BookingState'.
+src/screens/customer/BookingStatusScreen.tsx(81,40): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(82,41): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(97,45): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(97,88): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(99,84): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(113,72): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(122,51): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/BookingStatusScreen.tsx(123,52): error TS2551: Property 'worker' does not exist on type 'Booking'. Did you mean 'workerId'?
+src/screens/customer/RatingScreen.tsx(8,42): error TS2614: Module '"react-native-reanimated"' has no exported member 'ScaleInCenter'. Did you mean to use 'import ScaleInCenter from "react-native-reanimated"' instead?
+src/screens/customer/RatingScreen.tsx(66,23): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
+src/screens/worker/ActiveJobScreen.tsx(71,20): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
+src/screens/worker/ActiveJobScreen.tsx(130,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: LinearGradientProps): LinearGradient', gave the following error.
+    Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+      Source provides no match for required element at position 0 in target.
+  Overload 2 of 2, '(props: LinearGradientProps, context: any): LinearGradient', gave the following error.
+    Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+      Source provides no match for required element at position 0 in target.
