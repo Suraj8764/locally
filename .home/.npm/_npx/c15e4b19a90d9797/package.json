@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "expo-doctor": "^1.18.21"
+  },
+  "_npx": {
+    "packages": [
+      "expo-doctor"
+    ]
+  }
+}

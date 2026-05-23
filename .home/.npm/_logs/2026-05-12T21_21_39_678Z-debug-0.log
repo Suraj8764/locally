@@ -1,0 +1,26 @@
+0 verbose cli /opt/homebrew/Cellar/node/25.9.0_2/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.12.1
+2 info using node@v25.9.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/surajsahoo/Desktop/locally/mobile/.npmrc
+5 silly config load:file:/Users/surajsahoo/Desktop/locally/.home/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm explain eas-cli
+8 verbose argv "explain" "eas-cli" "--json"
+9 verbose logfile logs-max:10 dir:/Users/surajsahoo/Desktop/locally/.home/.npm/_logs/2026-05-12T21_21_39_678Z-
+10 verbose logfile /Users/surajsahoo/Desktop/locally/.home/.npm/_logs/2026-05-12T21_21_39_678Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 silly logfile done cleaning log files
+14 verbose stack Error: No dependencies found matching eas-cli
+14 verbose stack     at Explain.exec (/opt/homebrew/lib/node_modules/npm/lib/commands/explain.js:56:13)
+14 verbose stack     at async Npm.exec (/opt/homebrew/lib/node_modules/npm/lib/npm.js:193:9)
+14 verbose stack     at async module.exports (/opt/homebrew/lib/node_modules/npm/lib/cli/entry.js:67:5)
+15 error No dependencies found matching eas-cli
+16 verbose cwd /Users/surajsahoo/Desktop/locally/mobile
+17 verbose os Darwin 25.2.0
+18 verbose node v25.9.0
+19 verbose npm  v11.12.1
+20 verbose exit 1
+21 verbose code 1
+22 error A complete log of this run can be found in: /Users/surajsahoo/Desktop/locally/.home/.npm/_logs/2026-05-12T21_21_39_678Z-debug-0.log
