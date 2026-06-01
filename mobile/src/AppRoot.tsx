@@ -19,15 +19,19 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Phone, MessageCircle, Settings as SettingsIcon, MapPin, AlertTriangle, Send } from 'lucide-react-native';
+import { Phone, MessageCircle, Settings as SettingsIcon, MapPin, AlertTriangle, Send, Star, Clock, Briefcase, Calendar, CheckCircle2, XCircle, User } from 'lucide-react-native';
 import i18n from './i18n';
-import { Category, Worker, createLead, fetchCategories, fetchNearbyWorkers } from './api';
-import { requestAndGetCurrentLocation } from './location';
+import { Category, Worker, createLead, fetchCategories, fetchNearbyWorkers, api } from './api';
+import { requestAndGetCurrentLocation, getLocationNameFromCoords } from './location';
+import { AdminPanelScreen } from './screens/admin/AdminPanelScreen';
 
 type RootStackParamList = {
   Home: undefined;
   Settings: undefined;
+  Admin: undefined;
 };
+
+type BookingStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled_by_customer' | 'cancelled_by_worker';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -74,58 +78,440 @@ function Chip(props: { label: string; active?: boolean; onPress?: () => void }) 
   );
 }
 
-function WorkerCard(props: { worker: Worker; onPress?: () => void }) {
+function BookingModal(props: {
+  visible: boolean;
+  worker: Worker;
+  onClose: () => void;
+  onConfirm: (bookingData: { address: string; description: string; preferredTime?: string }) => void;
+}) {
   const { t } = useTranslation();
-  const w = props.worker;
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  
+  const [address, setAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [preferredTime, setPreferredTime] = useState('');
+  
   return (
-    <Pressable onPress={props.onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+    <Modal visible={props.visible} animationType="slide" transparent onRequestClose={props.onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={[styles.bookingModalCard, isDark ? styles.bookingModalCardDark : styles.bookingModalCardLight]}>
+          <View style={styles.bookingModalHeader}>
+            <Text style={[styles.bookingModalTitle, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{t('bookService')}</Text>
+            <Pressable onPress={props.onClose} style={({ pressed }) => [styles.closeModalBtn, pressed && styles.pressed]}>
+              <XCircle size={24} color={isDark ? '#9AA3B2' : '#6D7786'} />
+            </Pressable>
+          </View>
+          
+          <View style={[styles.workerSummary, isDark ? styles.workerSummaryDark : styles.workerSummaryLight]}>
+            <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight, styles.avatarSmall]}>
+              <User size={20} color={isDark ? '#FFFFFF' : '#0B0D10'} />
+            </View>
+            <View style={styles.workerSummaryInfo}>
+              <Text style={[styles.workerSummaryName, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{props.worker.displayName}</Text>
+              <Text style={styles.workerSummaryProfession}>{props.worker.profession || t('profession')}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.bookingSection}>
+            <Text style={[styles.bookingSectionLabel, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{t('address')}</Text>
+            <TextInput
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Enter your address"
+              placeholderTextColor={isDark ? '#6D7786' : '#8B94A3'}
+              style={[styles.bookingInput, isDark ? styles.bookingInputDark : styles.bookingInputLight, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}
+            />
+          </View>
+          
+          <View style={styles.bookingSection}>
+            <Text style={[styles.bookingSectionLabel, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{t('problemDescription')}</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Describe your problem..."
+              placeholderTextColor={isDark ? '#6D7786' : '#8B94A3'}
+              style={[styles.bookingInput, styles.bookingInputTextarea, isDark ? styles.bookingInputDark : styles.bookingInputLight, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+          
+          <View style={styles.bookingSection}>
+            <Text style={[styles.bookingSectionLabel, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>Preferred Time (Optional)</Text>
+            <TextInput
+              value={preferredTime}
+              onChangeText={setPreferredTime}
+              placeholder="e.g., 2:00 PM"
+              placeholderTextColor={isDark ? '#6D7786' : '#8B94A3'}
+              style={[styles.bookingInput, isDark ? styles.bookingInputDark : styles.bookingInputLight, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}
+            />
+          </View>
+          
+          <View style={styles.bookingModalActions}>
+            <Pressable onPress={props.onClose} style={({ pressed }) => [styles.secondaryBtn, isDark ? styles.secondaryBtnDark : styles.secondaryBtnLight, pressed && styles.pressed]}>
+              <Text style={[styles.secondaryBtnText, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{t('close')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (address && description) {
+                  props.onConfirm({ address, description, preferredTime });
+                }
+              }}
+              disabled={!address || !description}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                (!address || !description) && styles.primaryBtnDisabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.primaryBtnText}>{t('sendRequest')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function BookingStatusView(props: { status: BookingStatus; onClose: () => void; worker?: Worker | null }) {
+  const { t } = useTranslation();
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  
+  const statusConfig = {
+    pending: {
+      title: 'Request Sent',
+      message: 'Your booking request has been sent to the worker. Waiting for response.',
+      icon: Send,
+      color: '#0B6E4F',
+      showContact: false,
+    },
+    accepted: {
+      title: 'Booking Accepted',
+      message: 'The worker has accepted your request. You can now contact them directly.',
+      icon: CheckCircle2,
+      color: '#0B6E4F',
+      showContact: true,
+    },
+    rejected: {
+      title: 'Booking Rejected',
+      message: 'The worker was unable to accept your request. Please try another worker.',
+      icon: XCircle,
+      color: '#FF453A',
+      showContact: false,
+    },
+    cancelled_by_customer: {
+      title: 'Booking Cancelled',
+      message: 'You have cancelled this booking request.',
+      icon: XCircle,
+      color: '#FF453A',
+      showContact: false,
+    },
+    cancelled_by_worker: {
+      title: 'Booking Cancelled',
+      message: 'The worker has cancelled this booking request.',
+      icon: XCircle,
+      color: '#FF453A',
+      showContact: false,
+    },
+  };
+  
+  const config = statusConfig[props.status];
+  const Icon = config.icon;
+  
+  return (
+    <Modal visible={props.status !== null} animationType="slide" transparent onRequestClose={props.onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={[styles.bookingStatusCard, isDark ? styles.bookingStatusCardDark : styles.bookingStatusCardLight]}>
+          <View style={styles.bookingStatusHeader}>
+            <Text style={[styles.bookingStatusTitle, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{config.title}</Text>
+            <Pressable onPress={props.onClose} style={({ pressed }) => [styles.closeModalBtn, pressed && styles.pressed]}>
+              <XCircle size={24} color={isDark ? '#9AA3B2' : '#6D7786'} />
+            </Pressable>
+          </View>
+          
+          <View style={styles.statusIconContainer}>
+            <View style={[styles.statusIconCircle, { backgroundColor: `${config.color}20` }]}>
+              <Icon size={48} color={config.color} />
+            </View>
+          </View>
+          
+          <View style={[styles.statusCurrentInfo, isDark ? styles.statusCurrentInfoDark : styles.statusCurrentInfoLight]}>
+            <Text style={[styles.statusCurrentLabel, { color: isDark ? '#9AA3B2' : '#6D7786' }]}>Status</Text>
+            <Text style={[styles.statusCurrentValue, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>
+              {config.message}
+            </Text>
+          </View>
+          
+          {config.showContact && props.worker && (
+            <View style={styles.contactActionsRow}>
+              <Pressable 
+                onPress={() => props.worker && openCall(props.worker.phoneE164)}
+                style={({ pressed }) => [styles.contactActionBtn, isDark ? styles.contactActionBtnDark : styles.contactActionBtnLight, pressed && styles.pressed]}
+              >
+                <Phone size={20} color="#0B6E4F" />
+                <Text style={[styles.contactActionBtnText, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>Call Now</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => props.worker && openWhatsApp(props.worker.whatsappE164)}
+                style={({ pressed }) => [styles.contactActionBtn, isDark ? styles.contactActionBtnDark : styles.contactActionBtnLight, pressed && styles.pressed]}
+              >
+                <MessageCircle size={20} color="#0B6E4F" />
+                <Text style={[styles.contactActionBtnText, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>WhatsApp</Text>
+              </Pressable>
+            </View>
+          )}
+          
+          <Pressable onPress={props.onClose} style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
+            <Text style={styles.primaryBtnText}>{t('close')}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function WorkerRequestPopup(props: {
+  visible: boolean;
+  customerName: string;
+  location: string;
+  issueDescription: string;
+  requestedTime?: string;
+  onAccept: () => void;
+  onReject: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  
+  return (
+    <Modal visible={props.visible} animationType="slide" transparent onRequestClose={props.onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={[styles.workerRequestCard, isDark ? styles.workerRequestCardDark : styles.workerRequestCardLight]}>
+          <View style={styles.workerRequestHeader}>
+            <Text style={[styles.workerRequestTitle, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>New Service Request</Text>
+            <Pressable onPress={props.onClose} style={({ pressed }) => [styles.closeModalBtn, pressed && styles.pressed]}>
+              <XCircle size={24} color={isDark ? '#9AA3B2' : '#6D7786'} />
+            </Pressable>
+          </View>
+          
+          <View style={[styles.workerRequestInfo, isDark ? styles.workerRequestInfoDark : styles.workerRequestInfoLight]}>
+            <View style={styles.workerRequestInfoRow}>
+              <Text style={[styles.workerRequestInfoLabel, { color: isDark ? '#9AA3B2' : '#6D7786' }]}>Customer Name</Text>
+              <Text style={[styles.workerRequestInfoValue, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{props.customerName}</Text>
+            </View>
+            <View style={styles.workerRequestInfoRow}>
+              <Text style={[styles.workerRequestInfoLabel, { color: isDark ? '#9AA3B2' : '#6D7786' }]}>Location</Text>
+              <Text style={[styles.workerRequestInfoValue, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{props.location}</Text>
+            </View>
+            <View style={styles.workerRequestInfoRow}>
+              <Text style={[styles.workerRequestInfoLabel, { color: isDark ? '#9AA3B2' : '#6D7786' }]}>Issue Description</Text>
+              <Text style={[styles.workerRequestInfoValue, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{props.issueDescription}</Text>
+            </View>
+            {props.requestedTime && (
+              <View style={styles.workerRequestInfoRow}>
+                <Text style={[styles.workerRequestInfoLabel, { color: isDark ? '#9AA3B2' : '#6D7786' }]}>Requested Time</Text>
+                <Text style={[styles.workerRequestInfoValue, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{props.requestedTime}</Text>
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.workerRequestActions}>
+            <Pressable
+              onPress={props.onReject}
+              style={({ pressed }) => [styles.workerRequestRejectBtn, pressed && styles.pressed]}
+            >
+              <Text style={styles.workerRequestRejectBtnText}>{t('reject')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={props.onAccept}
+              style={({ pressed }) => [styles.workerRequestAcceptBtn, pressed && styles.pressed]}
+            >
+              <Text style={styles.workerRequestAcceptBtnText}>{t('accept')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function NotificationBanner(props: {
+  visible: boolean;
+  type: 'success' | 'info' | 'warning';
+  message: string;
+  onClose: () => void;
+}) {
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  
+  const config = {
+    success: {
+      icon: CheckCircle2,
+      bgColor: 'rgba(11,110,79,0.15)',
+      borderColor: 'rgba(11,110,79,0.3)',
+      iconColor: '#0B6E4F',
+    },
+    info: {
+      icon: Send,
+      bgColor: 'rgba(11,110,79,0.1)',
+      borderColor: 'rgba(11,110,79,0.25)',
+      iconColor: '#0B6E4F',
+    },
+    warning: {
+      icon: AlertTriangle,
+      bgColor: 'rgba(200,29,37,0.1)',
+      borderColor: 'rgba(200,29,37,0.25)',
+      iconColor: '#C81D25',
+    },
+  };
+  
+  const { icon: Icon, bgColor, borderColor, iconColor } = config[props.type];
+  
+  return (
+    <Modal visible={props.visible} animationType="fade" transparent onRequestClose={props.onClose}>
+      <View style={styles.notificationOverlay}>
+        <View style={[styles.notificationBanner, { backgroundColor: bgColor, borderColor }]}>
+          <View style={[styles.notificationIcon, { backgroundColor: isDark ? '#2A3240' : '#FFFFFF' }]}>
+            <Icon size={20} color={iconColor} />
+          </View>
+          <Text style={[styles.notificationMessage, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>{props.message}</Text>
+          <Pressable onPress={props.onClose} style={({ pressed }) => [styles.notificationClose, pressed && styles.pressed]}>
+            <XCircle size={20} color={isDark ? '#9AA3B2' : '#6D7786'} />
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function WorkerCard(props: { worker: Worker; onPress?: () => void; onBookNow?: () => void }) {
+  const { t } = useTranslation();
+  const scheme = useColorScheme();
+  const w = props.worker;
+  const isDark = scheme === 'dark';
+  
+  return (
+    <Pressable onPress={props.onPress} style={({ pressed }) => [styles.card, isDark ? styles.cardDark : styles.cardLight, pressed && styles.pressed]}>
       <View style={styles.cardHeader}>
-        <View style={styles.cardTitleWrap}>
-          <Text numberOfLines={1} style={styles.cardTitle}>
-            {w.displayName}
-          </Text>
-          <Text style={styles.cardSubtitle}>
-            {w.localityLabel}
-            {typeof w.distanceKm === 'number' ? ` • ${formatDistance(w.distanceKm)}` : ''}
-          </Text>
+        <View style={styles.profileSection}>
+          <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
+            {w.profileImage ? (
+              <View style={styles.avatarImage} />
+            ) : (
+              <User size={24} color={isDark ? '#FFFFFF' : '#0B0D10'} />
+            )}
+            {w.isOnline && <View style={[styles.onlineIndicator, styles.onlineIndicatorActive]} />}
+          </View>
+          <View style={styles.cardTitleWrap}>
+            <Text numberOfLines={1} style={[styles.cardTitle, { color: isDark ? '#FFFFFF' : '#0B0D10' }]}>
+              {w.displayName}
+            </Text>
+            <View style={styles.professionRow}>
+              {w.profession && (
+                <>
+                  <Briefcase size={12} color="#6D7786" />
+                  <Text style={styles.professionText}>{w.profession}</Text>
+                </>
+              )}
+            </View>
+            <Text style={styles.cardSubtitle}>
+              {w.localityLabel}
+              {typeof w.distanceKm === 'number' ? ` • ${formatDistance(w.distanceKm)}` : ''}
+            </Text>
+          </View>
         </View>
-        <View style={styles.badgeRow}>
-          {w.isOnline ? <Text style={[styles.badge, styles.badgeGood]}>●</Text> : <Text style={styles.badge}>●</Text>}
-          <Text style={styles.badgeText}>{w.isOnline ? t('availableNow') : t('offline')}</Text>
-        </View>
+        {w.isOnline ? (
+          <View style={[styles.availableBadge, isDark ? styles.availableBadgeDark : styles.availableBadgeLight]}>
+            <CheckCircle2 size={12} color="#0B6E4F" />
+            <Text style={styles.availableBadgeText}>{t('availableNow')}</Text>
+          </View>
+        ) : (
+          <View style={[styles.offlineBadge, isDark ? styles.offlineBadgeDark : styles.offlineBadgeLight]}>
+            <XCircle size={12} color="#6D7786" />
+            <Text style={styles.offlineBadgeText}>{t('offline')}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.metaRow}>
-        <Text style={styles.metaText}>{`${w.ratingAvg.toFixed(1)} (${w.ratingCount})`}</Text>
-        <Text style={styles.metaDot}>•</Text>
-        <Text style={styles.metaText}>{`${w.experienceYears}y`}</Text>
-        <Text style={styles.metaDot}>•</Text>
-        <Text style={styles.metaText}>{`${t('trust')} ${w.trustScore}`}</Text>
-        <Text style={styles.metaDot}>•</Text>
-        <Text style={styles.metaText}>{w.isVerified ? t('verified') : t('unverified')}</Text>
+        <View style={styles.metaItem}>
+          <Star size={14} color="#FFB800" fill="#FFB800" />
+          <Text style={[styles.metaText, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{`${w.ratingAvg.toFixed(1)} (${w.ratingCount})`}</Text>
+        </View>
+        <Text style={[styles.metaDot, { color: isDark ? '#3D4656' : '#C4CAD6' }]}>•</Text>
+        <View style={styles.metaItem}>
+          <Briefcase size={14} color="#6D7786" />
+          <Text style={[styles.metaText, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{`${w.completedJobs} ${t('jobs')}`}</Text>
+        </View>
+        <Text style={[styles.metaDot, { color: isDark ? '#3D4656' : '#C4CAD6' }]}>•</Text>
+        {w.responseTimeMins && (
+          <>
+            <View style={styles.metaItem}>
+              <Clock size={14} color="#6D7786" />
+              <Text style={[styles.metaText, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{`${w.responseTimeMins} ${t('mins')}`}</Text>
+            </View>
+            <Text style={[styles.metaDot, { color: isDark ? '#3D4656' : '#C4CAD6' }]}>•</Text>
+          </>
+        )}
+        <View style={styles.metaItem}>
+          <Text style={[styles.metaText, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{w.isVerified ? t('verified') : t('unverified')}</Text>
+        </View>
       </View>
+
+      {w.description && (
+        <Text style={[styles.descriptionText, { color: isDark ? '#9AA3B2' : '#6D7786' }]} numberOfLines={2}>
+          {w.description}
+        </Text>
+      )}
 
       {Array.isArray(w.badges) && w.badges.length > 0 ? (
         <View style={styles.pillRow}>
           {w.badges.slice(0, 3).map((b: string) => (
-            <View key={b} style={styles.pill}>
-              <Text style={styles.pillText}>{b}</Text>
+            <View key={b} style={[styles.pill, isDark ? styles.pillDark : styles.pillLight]}>
+              <Text style={[styles.pillText, { color: isDark ? '#E8ECF3' : '#0B0D10' }]}>{b}</Text>
             </View>
           ))}
+          {w.emergencyAvailable && (
+            <View style={[styles.pill, styles.pillEmergency]}>
+              <AlertTriangle size={12} color="#C81D25" />
+              <Text style={styles.pillTextEmergency}>{t('emergencyService')}</Text>
+            </View>
+          )}
+        </View>
+      ) : w.emergencyAvailable ? (
+        <View style={styles.pillRow}>
+          <View style={[styles.pill, styles.pillEmergency]}>
+            <AlertTriangle size={12} color="#C81D25" />
+            <Text style={styles.pillTextEmergency}>{t('emergencyService')}</Text>
+          </View>
         </View>
       ) : null}
 
       <View style={styles.actionsRow}>
-        <Pressable onPress={() => openCall(w.phoneE164)} style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}>
-          <Phone size={18} color="#0B6E4F" />
-          <Text style={styles.actionText}>{t('call')}</Text>
+        <Pressable 
+          onPress={props.onBookNow}
+          style={({ pressed }) => [styles.bookNowBtn, pressed && styles.pressed]}
+        >
+          <Text style={styles.bookNowBtnText}>{t('bookNow')}</Text>
+        </Pressable>
+        <Pressable 
+          onPress={() => {
+            Alert.alert('Contact Disabled', 'Contact options will be available after the worker accepts your request');
+          }}
+          style={({ pressed }) => [styles.actionBtn, styles.actionBtnDisabled, pressed && styles.pressed]}
+        >
+          <Phone size={16} color="#6D7786" />
         </Pressable>
         <Pressable
-          onPress={() => openWhatsApp(w.whatsappE164)}
-          style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
+          onPress={() => {
+            Alert.alert('Contact Disabled', 'Contact options will be available after the worker accepts your request');
+          }}
+          style={({ pressed }) => [styles.actionBtn, styles.actionBtnDisabled, pressed && styles.pressed]}
         >
-          <MessageCircle size={18} color="#0B6E4F" />
-          <Text style={styles.actionText}>{t('whatsapp')}</Text>
+          <MessageCircle size={16} color="#6D7786" />
         </Pressable>
       </View>
     </Pressable>
@@ -142,6 +528,7 @@ function HomeScreen({ navigation }: { navigation: { navigate: (s: 'Settings') =>
   const [onlyOnline, setOnlyOnline] = useState(true);
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationName, setLocationName] = useState<string | null>(null);
   const [usingLastKnown, setUsingLastKnown] = useState(false);
   const [locStatus, setLocStatus] = useState<'idle' | 'loading' | 'granted' | 'denied' | 'error'>('idle');
   const [locError, setLocError] = useState<string | null>(null);
@@ -151,6 +538,10 @@ function HomeScreen({ navigation }: { navigation: { navigate: (s: 'Settings') =>
   const [requestOpen, setRequestOpen] = useState(false);
   const [requestText, setRequestText] = useState('');
   const [requestSending, setRequestSending] = useState(false);
+  
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+  const [bookingStatus, setBookingStatus] = useState<BookingStatus | null>(null);
 
   const emergencyCategories = useMemo(() => categories.filter((c) => c.isEmergency), [categories]);
 
@@ -158,19 +549,31 @@ function HomeScreen({ navigation }: { navigation: { navigate: (s: 'Settings') =>
     setLocStatus('loading');
     setLocError(null);
     const res = await requestAndGetCurrentLocation();
+    
+    console.log('Location response:', res);
+    
     if (res.status === 'granted') {
       setCoords(res.coords);
+      const name = res.locationName || getLocationNameFromCoords(res.coords.lat, res.coords.lng);
+      setLocationName(name);
+      console.log('Setting location name:', name);
       setUsingLastKnown(false);
       setLocStatus('granted');
       return;
     }
     if (res.status === 'denied') {
       setCoords(res.lastKnown);
+      const name = res.locationName || (res.lastKnown ? getLocationNameFromCoords(res.lastKnown.lat, res.lastKnown.lng) : null);
+      setLocationName(name);
+      console.log('Setting location name (denied):', name);
       setUsingLastKnown(Boolean(res.lastKnown));
       setLocStatus('denied');
       return;
     }
     setCoords(res.lastKnown);
+    const name = res.locationName || (res.lastKnown ? getLocationNameFromCoords(res.lastKnown.lat, res.lastKnown.lng) : null);
+    setLocationName(name);
+    console.log('Setting location name (error):', name);
     setUsingLastKnown(Boolean(res.lastKnown));
     setLocStatus('error');
     setLocError(res.message);
@@ -304,7 +707,7 @@ function HomeScreen({ navigation }: { navigation: { navigate: (s: 'Settings') =>
         <View style={styles.locationLeft}>
           {locStatus === 'loading' ? <ActivityIndicator /> : <Text style={styles.locationDot}>●</Text>}
           <Text style={styles.locationText}>
-            {coords ? `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}` : t('locationPermissionTitle')}
+            {locationName || (coords ? `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}` : t('locationPermissionTitle'))}
           </Text>
           {usingLastKnown ? <Text style={styles.locationHint}>{t('usingLastKnownLocation')}</Text> : null}
         </View>
@@ -336,7 +739,15 @@ function HomeScreen({ navigation }: { navigation: { navigate: (s: 'Settings') =>
             data={workers}
             keyExtractor={(w) => w.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => <WorkerCard worker={item} />}
+            renderItem={({ item }) => (
+              <WorkerCard 
+                worker={item} 
+                onBookNow={() => {
+                  setSelectedWorker(item);
+                  setBookingModalOpen(true);
+                }}
+              />
+            )}
           />
         )}
       </View>
@@ -389,11 +800,47 @@ function HomeScreen({ navigation }: { navigation: { navigate: (s: 'Settings') =>
           </View>
         </View>
       </Modal>
+      
+      {selectedWorker && (
+        <BookingModal
+          visible={bookingModalOpen}
+          worker={selectedWorker}
+          onClose={() => {
+            setBookingModalOpen(false);
+            setSelectedWorker(null);
+          }}
+          onConfirm={async (bookingData) => {
+            setBookingModalOpen(false);
+            setBookingStatus('pending');
+            try {
+              // Send booking request to the selected worker
+              await api.bookings.create({
+                workerId: selectedWorker.id,
+                address: bookingData.address,
+                problemDescription: bookingData.description,
+                preferredTime: bookingData.preferredTime,
+              });
+              Alert.alert(t('bookingConfirmed'), 'Your request has been sent to the worker');
+            } catch (e) {
+              Alert.alert('Error', 'Failed to send booking request');
+              setBookingStatus(null);
+            }
+          }}
+        />
+      )}
+      
+      {bookingStatus && (
+        <BookingStatusView
+          status={bookingStatus}
+          worker={selectedWorker}
+          onClose={() => setBookingStatus(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-function SettingsScreen() {
+function SettingsScreen({ navigation }: any) {
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const fg = scheme === 'dark' ? '#FFFFFF' : '#0B0D10';
@@ -443,6 +890,7 @@ export function AppRoot() {
               >
                 <Stack.Screen name="Home" component={HomeScreen as any} />
                 <Stack.Screen name="Settings" component={SettingsScreen as any} />
+                <Stack.Screen name="Admin" component={AdminPanelScreen as any} />
               </Stack.Navigator>
             </NavigationContainer>
           </View>
@@ -644,17 +1092,129 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
+  },
+  cardDark: {
+    backgroundColor: '#151A22',
+    borderColor: '#2A3240',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
     borderColor: '#E3E6EE',
-    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  avatarDark: {
+    backgroundColor: '#2A3240',
+  },
+  avatarLight: {
+    backgroundColor: '#F1F3F8',
+  },
+  avatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0B6E4F',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+  },
+  onlineIndicatorActive: {
+    backgroundColor: '#0B6E4F',
+    borderColor: '#151A22',
+  },
+  professionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  professionText: {
+    fontSize: 12,
+    color: '#6D7786',
+    fontWeight: '600',
+  },
+  availableBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  availableBadgeDark: {
+    backgroundColor: 'rgba(11,110,79,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(11,110,79,0.3)',
+  },
+  availableBadgeLight: {
+    backgroundColor: 'rgba(11,110,79,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(11,110,79,0.25)',
+  },
+  availableBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0B6E4F',
+  },
+  offlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  offlineBadgeDark: {
+    backgroundColor: 'rgba(109,119,134,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(109,119,134,0.2)',
+  },
+  offlineBadgeLight: {
+    backgroundColor: 'rgba(109,119,134,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(109,119,134,0.15)',
+  },
+  offlineBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6D7786',
   },
   cardTitleWrap: {
     flex: 1,
@@ -689,17 +1249,27 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
     gap: 6,
     flexWrap: 'wrap',
   },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   metaText: {
     fontSize: 12,
-    color: '#6D7786',
     fontWeight: '600',
   },
   metaDot: {
-    color: '#C4CAD6',
+    fontSize: 12,
+  },
+  descriptionText: {
+    fontSize: 13,
+    marginTop: 10,
+    lineHeight: 18,
+    fontWeight: '500',
   },
   pillRow: {
     flexDirection: 'row',
@@ -711,29 +1281,120 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
+  },
+  pillDark: {
+    backgroundColor: '#2A3240',
+  },
+  pillLight: {
     backgroundColor: '#F1F3F8',
   },
   pillText: {
     fontSize: 12,
-    color: '#0B0D10',
     fontWeight: '600',
+  },
+  pillEmergency: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(200,29,37,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,29,37,0.25)',
+  },
+  pillTextEmergency: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#C81D25',
   },
   actionsRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
+    gap: 8,
+    marginTop: 14,
   },
-  actionBtn: {
+  priceSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#2A3240',
+  },
+  priceLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  priceValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  bookNowBtn: {
     flex: 1,
-    borderRadius: 14,
-    backgroundColor: 'rgba(11,110,79,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(11,110,79,0.24)',
+    backgroundColor: '#0B6E4F',
     paddingVertical: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#0B6E4F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  bookNowBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  actionBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnDark: {
+    backgroundColor: 'rgba(11,110,79,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(11,110,79,0.25)',
+  },
+  actionBtnLight: {
+    backgroundColor: 'rgba(11,110,79,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(11,110,79,0.2)',
+  },
+  actionBtnDisabled: {
+    opacity: 0.4,
+  },
+  contactActionsRow: {
     flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  contactActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
     gap: 8,
+  },
+  contactActionBtnDark: {
+    backgroundColor: 'rgba(11,110,79,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(11,110,79,0.25)',
+  },
+  contactActionBtnLight: {
+    backgroundColor: 'rgba(11,110,79,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(11,110,79,0.2)',
+  },
+  contactActionBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   actionText: {
     fontSize: 14,
@@ -805,6 +1466,428 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
     padding: 16,
     gap: 12,
+  },
+  bookingModalCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  bookingModalCardDark: {
+    backgroundColor: '#151A22',
+  },
+  bookingModalCardLight: {
+    backgroundColor: '#FFFFFF',
+  },
+  bookingModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  bookingModalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  closeModalBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workerSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  workerSummaryDark: {
+    backgroundColor: '#2A3240',
+  },
+  workerSummaryLight: {
+    backgroundColor: '#F1F3F8',
+  },
+  avatarSmall: {
+    width: 48,
+    height: 48,
+  },
+  workerSummaryInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  workerSummaryName: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  workerSummaryProfession: {
+    fontSize: 13,
+    color: '#6D7786',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  workerSummaryPrice: {
+    alignItems: 'flex-end',
+  },
+  workerSummaryPriceLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  workerSummaryPriceValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  bookingSection: {
+    marginBottom: 16,
+  },
+  bookingSectionLast: {
+    marginBottom: 0,
+  },
+  bookingSectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  dateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  dateSelectorDark: {
+    backgroundColor: '#2A3240',
+    borderColor: '#3D4656',
+  },
+  dateSelectorLight: {
+    backgroundColor: '#F1F3F8',
+    borderColor: '#E3E6EE',
+  },
+  dateSelectorText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  timeSlotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  timeSlot: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  timeSlotDark: {
+    backgroundColor: '#2A3240',
+    borderColor: '#3D4656',
+  },
+  timeSlotLight: {
+    backgroundColor: '#F1F3F8',
+    borderColor: '#E3E6EE',
+  },
+  timeSlotActive: {
+    backgroundColor: '#0B6E4F',
+    borderColor: '#0B6E4F',
+  },
+  timeSlotText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  timeSlotTextActive: {
+    color: '#FFFFFF',
+  },
+  bookingInput: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bookingInputDark: {
+    backgroundColor: '#2A3240',
+    borderColor: '#3D4656',
+  },
+  bookingInputLight: {
+    backgroundColor: '#F1F3F8',
+    borderColor: '#E3E6EE',
+  },
+  bookingInputTextarea: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  imageUploadBtn: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderStyle: 'dashed',
+  },
+  imageUploadBtnDark: {
+    backgroundColor: '#2A3240',
+    borderColor: '#3D4656',
+  },
+  imageUploadBtnLight: {
+    backgroundColor: '#F1F3F8',
+    borderColor: '#E3E6EE',
+  },
+  imageUploadBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  bookingModalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  secondaryBtnDark: {
+    backgroundColor: '#2A3240',
+    borderColor: '#3D4656',
+  },
+  secondaryBtnLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E3E6EE',
+  },
+  bookingStatusCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+  },
+  bookingStatusCardDark: {
+    backgroundColor: '#151A22',
+  },
+  bookingStatusCardLight: {
+    backgroundColor: '#FFFFFF',
+  },
+  bookingStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  bookingStatusTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  statusSteps: {
+    marginBottom: 24,
+  },
+  statusStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statusStepIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  statusStepIconDark: {
+    backgroundColor: '#2A3240',
+  },
+  statusStepIconLight: {
+    backgroundColor: '#F1F3F8',
+  },
+  statusStepIconCompleted: {
+    backgroundColor: 'rgba(11,110,79,0.15)',
+  },
+  statusStepLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  statusStepLabelCompleted: {
+    color: '#0B6E4F',
+    fontWeight: '700',
+  },
+  statusStepLine: {
+    position: 'absolute',
+    left: 19,
+    top: 40,
+    width: 2,
+    height: 36,
+  },
+  statusStepLineDark: {
+    backgroundColor: '#3D4656',
+  },
+  statusStepLineLight: {
+    backgroundColor: '#E3E6EE',
+  },
+  statusStepLineCompleted: {
+    backgroundColor: '#0B6E4F',
+  },
+  statusCurrentInfo: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  statusCurrentInfoDark: {
+    backgroundColor: '#2A3240',
+  },
+  statusCurrentInfoLight: {
+    backgroundColor: '#F1F3F8',
+  },
+  statusCurrentLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statusCurrentValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  statusIconContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  statusIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workerRequestCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+  },
+  workerRequestCardDark: {
+    backgroundColor: '#151A22',
+  },
+  workerRequestCardLight: {
+    backgroundColor: '#FFFFFF',
+  },
+  workerRequestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  workerRequestTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  workerRequestInfo: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  workerRequestInfoDark: {
+    backgroundColor: '#2A3240',
+  },
+  workerRequestInfoLight: {
+    backgroundColor: '#F1F3F8',
+  },
+  workerRequestInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  workerRequestInfoLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  workerRequestInfoValue: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  workerRequestEarningValue: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  workerRequestTimer: {
+    marginBottom: 20,
+  },
+  workerRequestProgressBar: {
+    height: 4,
+    backgroundColor: '#2A3240',
+    borderRadius: 2,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  workerRequestProgressFill: {
+    height: '100%',
+    backgroundColor: '#0B6E4F',
+    borderRadius: 2,
+  },
+  workerRequestTimerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  workerRequestActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  workerRequestRejectBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#C81D25',
+    backgroundColor: 'rgba(200,29,37,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workerRequestRejectBtnText: {
+    color: '#C81D25',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  workerRequestAcceptBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#0B6E4F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workerRequestAcceptBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  notificationOverlay: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 60,
+    paddingHorizontal: 16,
+  },
+  notificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationMessage: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  notificationClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
     fontSize: 16,

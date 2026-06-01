@@ -45,6 +45,14 @@ export const api = {
       const res = await client.get<{ categories: Category[] }>('/v1/categories');
       return res.data.categories;
     },
+    create: async (data: { label: string; isEmergency?: boolean }) => {
+      const res = await client.post<{ category: Category }>('/v1/categories', data);
+      return res.data.category;
+    },
+    delete: async (categoryId: string) => {
+      const res = await client.delete<{ message: string }>(`/v1/categories/${categoryId}`);
+      return res.data;
+    },
   },
   workers: {
     nearby: async (params: { lat: number; lng: number; radiusKm: number; categoryId?: string; onlyOnline?: boolean }) => {
@@ -55,9 +63,55 @@ export const api = {
       const res = await client.get<{ worker: Worker }>(`/v1/workers/${id}`);
       return res.data.worker;
     },
-    updateStatus: async (id: string, isOnline: boolean) => {
-      const res = await client.patch(`/v1/workers/${id}/status`, { isOnline });
+    updateStatus: async (id: string, status: 'available' | 'busy' | 'offline' | boolean) => {
+      const res = await client.patch(`/v1/workers/${id}/status`, { 
+        isOnline: typeof status === 'boolean' ? status : status !== 'offline',
+        status: typeof status === 'boolean' ? (status ? 'available' : 'offline') : status,
+      });
       return res.data;
+    },
+    register: async (data: {
+      displayName: string;
+      phoneE164: string;
+      whatsappE164?: string;
+      categoryId: string;
+      languages?: string[];
+      experienceYears?: number;
+      localityLabel?: string;
+      areaCoverageKm?: number;
+      location?: { lat: number; lng: number };
+      workingHoursLabel?: string;
+      emergencyAvailable?: boolean;
+      profession?: string;
+      description?: string;
+      skills?: string[];
+      hourlyRate?: number;
+      estimatedStartingPrice?: number;
+      responseTimeMins?: number;
+      adminPhone?: string;
+    }) => {
+      const res = await client.post<{ worker: Worker }>('/v1/workers/register', data);
+      return res.data.worker;
+    },
+    getReviews: async (workerId: string) => {
+      const res = await client.get<{ reviews: any[] }>(`/v1/workers/${workerId}/reviews`);
+      return res.data.reviews;
+    },
+    createReview: async (workerId: string, data: { bookingId?: string; customerId?: string; rating: number; comment?: string; tags?: string[] }) => {
+      const res = await client.post<{ review: any }>(`/v1/workers/${workerId}/reviews`, data);
+      return res.data.review;
+    },
+    verify: async (workerId: string, data: { aadhaarNumber: string; aadhaarName: string; verificationMethod: string }) => {
+      const res = await client.patch<{ worker: Worker; message: string }>(`/v1/workers/${workerId}/verify`, data);
+      return res.data;
+    },
+    delete: async (workerId: string) => {
+      const res = await client.delete<{ message: string }>(`/v1/workers/${workerId}`);
+      return res.data;
+    },
+    getAll: async () => {
+      const res = await client.get<{ workers: Worker[] }>('/v1/workers/admin/all');
+      return res.data.workers;
     },
   },
   bookings: {
@@ -101,6 +155,14 @@ export const api = {
     getUserBookings: async (userId: string) => {
       const res = await client.get<{ bookings: Booking[] }>(`/v1/bookings/user/${userId}`);
       return res.data.bookings;
+    },
+    accept: async (bookingId: string) => {
+      const res = await client.patch<{ booking: Booking }>(`/v1/bookings/${bookingId}/accept`);
+      return res.data.booking;
+    },
+    reject: async (bookingId: string) => {
+      const res = await client.patch<{ booking: Booking }>(`/v1/bookings/${bookingId}/reject`);
+      return res.data.booking;
     },
   },
   leads: {

@@ -9,6 +9,8 @@ import { EmergencyScreen } from '../screens/customer/EmergencyScreen';
 import { ChatScreen } from '../screens/customer/ChatScreen';
 import { RatingScreen } from '../screens/customer/RatingScreen';
 import { PaymentScreen } from '../screens/customer/PaymentScreen';
+import { WorkerRegistrationScreen } from '../screens/auth/WorkerRegistrationScreen';
+import { HelpCenterScreen } from '../screens/customer/HelpCenterScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +26,8 @@ export function CustomerStack() {
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="Rating" component={RatingScreen} options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="Emergency" component={EmergencyScreen} options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="WorkerRegistration" component={WorkerRegistrationScreen} />
+      <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
     </Stack.Navigator>
   );
 }

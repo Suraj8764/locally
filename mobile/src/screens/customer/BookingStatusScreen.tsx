@@ -1,55 +1,25 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native';
-import { ChevronLeft, Phone, MessageCircle, MapPin, Calendar, CreditCard, Share2, Star } from 'lucide-react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { ChevronLeft, CheckCircle2, Bell } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api';
-import { useSocketEvent } from '../../hooks/useSocket';
-import { useBookingStore } from '../../store/bookingStore';
-import { BookingTimeline } from '../../components/booking/BookingTimeline';
-import { StatusHeader } from '../../components/booking/StatusHeader';
-import { Avatar } from '../../components/ui/Avatar';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import { Platform } from 'react-native';
-import { useWorkerTracking } from '../../hooks/useWorkerTracking';
-import { LiveTrackingMap } from '../../components/booking/LiveTrackingMap';
-import { Booking } from '../../types';
 
 export function BookingStatusScreen({ navigation, route }: any) {
   const { bookingId } = route.params;
-  const { activeBooking, updateBookingStatus, setActiveBooking } = useBookingStore();
-  const workerLocation = useWorkerTracking(bookingId);
 
-  const { data: booking, isLoading } = useQuery<Booking>({
+  const { data: booking, isLoading } = useQuery({
     queryKey: ['booking', bookingId],
     queryFn: () => api.bookings.getById(bookingId),
-    enabled: !activeBooking,
   });
 
-  useEffect(() => {
-    if (booking && !activeBooking) {
-      setActiveBooking(booking);
-    }
-  }, [booking, activeBooking, setActiveBooking]);
-
-  useSocketEvent('booking:status', (updatedBooking: any) => {
-    if (updatedBooking.id === bookingId) {
-      updateBookingStatus(updatedBooking.status);
-    }
-  });
-
-  const currentBooking = (activeBooking || booking) as Booking;
-
-  if (isLoading || !currentBooking) {
+  if (isLoading || !booking) {
     return (
       <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator color="#E8294C" size="large" />
       </View>
     );
   }
-
-  const isAssigned = currentBooking.workerId && currentBooking.status !== 'pending' && !currentBooking.status.startsWith('cancelled');
-  const showMap = Platform.OS !== 'web' && currentBooking.status === 'on_the_way' && workerLocation;
 
   return (
     <View className="flex-1 bg-background">
@@ -65,118 +35,68 @@ export function BookingStatusScreen({ navigation, route }: any) {
         >
           <ChevronLeft size={24} color="#FFF" />
         </Pressable>
-        <Text className="text-white text-lg font-black">Booking #{currentBooking.id.slice(-6).toUpperCase()}</Text>
-        <Pressable className="w-12 h-12 bg-surface/50 border border-white/10 rounded-2xl items-center justify-center">
-          <Share2 size={20} color="#FFF" />
-        </Pressable>
+        <Text className="text-white text-lg font-black">Booking Confirmed</Text>
+        <View className="w-12" />
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-        <StatusHeader status={currentBooking.status} />
+      <View className="flex-1 px-6 items-center justify-center">
+        {/* Success Icon */}
+        <View className="w-32 h-32 bg-onlineGreen/10 border border-onlineGreen/30 rounded-full items-center justify-center mb-8">
+          <CheckCircle2 size={64} color="#30D158" />
+        </View>
 
-        {showMap ? (
-          <LiveTrackingMap 
-            workerLocation={workerLocation} 
-            customerLocation={currentBooking.location} 
-            workerName={currentBooking.worker?.displayName} 
-            workerImage={currentBooking.worker?.profileImage}
-          />
-        ) : (
-          <View className="mb-8">
-             <View className="bg-surface border border-white/5 rounded-[32px] p-6 shadow-2xl shadow-black/50">
-                <BookingTimeline status={currentBooking.status} />
-             </View>
-          </View>
-        )}
+        {/* Success Message */}
+        <Text className="text-white text-3xl font-black tracking-tight mb-3 text-center">
+          Booking Confirmed!
+        </Text>
+        <Text className="text-textSecondary text-base text-center mb-8 max-w-xs">
+          Your booking has been sent to nearby professionals. They will be notified shortly.
+        </Text>
 
-        {isAssigned && (
-          <View className="mb-8">
-            <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-[2px] mb-4 ml-2">Assigned Professional</Text>
-            <View className="bg-surface border border-white/5 rounded-[32px] p-5">
-              <View className="flex-row items-center gap-4 mb-5">
-                <Avatar url={currentBooking.worker?.profileImage} name={currentBooking.worker?.displayName || 'Worker'} size={56} />
-                <View className="flex-1">
-                   <Text className="text-white font-black text-lg">{currentBooking.worker?.displayName || 'Finding...'}</Text>
-                   <Text className="text-accent text-[10px] font-bold uppercase tracking-widest">{currentBooking.categoryId}</Text>
-                </View>
-                <View className="items-end">
-                   <View className="flex-row items-center gap-1">
-                      <Star size={12} color="#FF9F0A" fill="#FF9F0A" />
-                      <Text className="text-white font-bold text-xs">4.9</Text>
-                   </View>
-                   <Text className="text-textSecondary text-[10px]">Top Rated</Text>
-                </View>
-              </View>
-              
-              <View className="flex-row gap-3">
-                <Pressable 
-                  onPress={() => Linking.openURL(`tel:${currentBooking.worker?.phoneE164}`)}
-                  className="flex-1 h-14 bg-white/5 border border-white/10 rounded-2xl items-center justify-center flex-row gap-2"
-                >
-                  <Phone size={18} color="#FFF" />
-                  <Text className="text-white font-bold">Call</Text>
-                </Pressable>
-                <Pressable 
-                  onPress={() => navigation.navigate('Chat', {
-                    bookingId: currentBooking.id,
-                    recipientName: currentBooking.worker?.displayName || 'Professional',
-                    recipientImage: currentBooking.worker?.profileImage,
-                  })}
-                  className="flex-1 h-14 bg-onlineGreen/10 border border-onlineGreen/20 rounded-2xl items-center justify-center flex-row gap-2"
-                >
-                  <MessageCircle size={18} color="#30D158" />
-                  <Text className="text-onlineGreen font-bold">Chat</Text>
-                </Pressable>
-              </View>
+        {/* Worker Notification Indicator */}
+        <View className="bg-surface border border-white/5 rounded-2xl p-5 mb-8 w-full">
+          <View className="flex-row items-center gap-4">
+            <View className="w-12 h-12 bg-accent/10 rounded-full items-center justify-center">
+              <Bell size={24} color="#E8294C" />
             </View>
-          </View>
-        )}
-
-        <View className="mb-10">
-          <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-[2px] mb-4 ml-2">Job Details</Text>
-          <View className="bg-surface border border-white/5 rounded-[32px] p-6">
-            <View className="flex-row items-center gap-4 mb-5 pb-5 border-b border-white/5">
-              <View className="w-10 h-10 bg-background rounded-xl items-center justify-center">
-                <MapPin size={20} color="#E8294C" />
-              </View>
-              <View className="flex-1">
-                 <Text className="text-textSecondary text-[10px] font-bold uppercase mb-0.5">Address</Text>
-                 <Text className="text-white font-bold text-sm" numberOfLines={1}>{currentBooking.address}</Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-center gap-4 mb-5 pb-5 border-b border-white/5">
-              <View className="w-10 h-10 bg-background rounded-xl items-center justify-center">
-                <Calendar size={20} color="#0A84FF" />
-              </View>
-              <View className="flex-1">
-                 <Text className="text-textSecondary text-[10px] font-bold uppercase mb-0.5">Scheduled</Text>
-                 <Text className="text-white font-bold text-sm">
-                   {new Date(currentBooking.createdAtMs).toLocaleDateString()} at {new Date(currentBooking.createdAtMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                 </Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-center gap-4">
-              <View className="w-10 h-10 bg-background rounded-xl items-center justify-center">
-                <CreditCard size={20} color="#30D158" />
-              </View>
-              <View className="flex-1">
-                 <Text className="text-textSecondary text-[10px] font-bold uppercase mb-0.5">Payment</Text>
-                 <Text className="text-white font-bold text-sm">UPI - Paid</Text>
-              </View>
-              <Text className="text-accent font-black text-xl">₹{currentBooking.estimatedPrice || 149}</Text>
+            <View className="flex-1">
+              <Text className="text-white font-bold text-base mb-1">
+                Worker Notified
+              </Text>
+              <Text className="text-textSecondary text-sm">
+                Professional will receive your request and respond soon
+              </Text>
             </View>
           </View>
         </View>
 
+        {/* Booking ID */}
+        <View className="bg-surface/50 border border-white/5 rounded-xl px-6 py-3">
+          <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1">
+            Booking ID
+          </Text>
+          <Text className="text-white font-black text-lg">
+            #{booking.id.slice(-6).toUpperCase()}
+          </Text>
+        </View>
 
-        {!currentBooking.status.startsWith('cancelled') && currentBooking.status !== 'completed' && (
-          <Pressable className="mb-20">
-             <Text className="text-error/50 font-bold text-xs text-center uppercase tracking-widest">Cancel Booking</Text>
-          </Pressable>
-        )}
-      </ScrollView>
+        {/* Back to Home Button */}
+        <Pressable 
+          onPress={() => navigation.navigate('HomeTab')}
+          className="mt-12 w-full"
+        >
+          <LinearGradient
+            colors={['#E8294C', '#FF453A']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            className="h-14 rounded-2xl items-center justify-center shadow-xl shadow-accent/40"
+          >
+            <Text className="text-white font-black text-base uppercase tracking-[3px]">
+              Back to Home
+            </Text>
+          </LinearGradient>
+        </Pressable>
+      </View>
     </View>
   );
 }

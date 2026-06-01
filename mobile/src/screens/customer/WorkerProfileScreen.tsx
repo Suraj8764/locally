@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Image, Dimensions, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, Dimensions, Linking, ActivityIndicator, Alert } from 'react-native';
 import { ChevronLeft, Star, MapPin, Clock, ShieldCheck, Briefcase, Languages, BadgeCheck, Phone, MessageCircle, Image as ImageIcon, Award } from 'lucide-react-native';
 import { useWorker } from '../../hooks/useWorkers';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -255,16 +255,20 @@ export function WorkerProfileScreen({ navigation, route }: any) {
         </Pressable>
         <View className="flex-row gap-2">
            <Pressable 
-             onPress={() => Linking.openURL(`tel:${worker?.phoneE164 || '1234567890'}`)}
-             className="w-12 h-12 bg-black/30 backdrop-blur-md rounded-2xl items-center justify-center"
+             onPress={() => {
+               Alert.alert('Contact Disabled', 'Contact options will be available after the worker accepts your request');
+             }}
+             className="w-12 h-12 bg-black/30 backdrop-blur-md rounded-2xl items-center justify-center opacity-40"
            >
-             <Phone size={20} color="#30D158" />
+             <Phone size={20} color="#8E8E93" />
            </Pressable>
            <Pressable 
-             onPress={() => Linking.openURL(`https://wa.me/${worker?.whatsappE164 || worker?.phoneE164 || '1234567890'}`)}
-             className="w-12 h-12 bg-black/30 backdrop-blur-md rounded-2xl items-center justify-center"
+             onPress={() => {
+               Alert.alert('Contact Disabled', 'Contact options will be available after the worker accepts your request');
+             }}
+             className="w-12 h-12 bg-black/30 backdrop-blur-md rounded-2xl items-center justify-center opacity-40"
            >
-             <MessageCircle size={20} color="#0A84FF" />
+             <MessageCircle size={20} color="#8E8E93" />
            </Pressable>
         </View>
       </View>
@@ -274,19 +278,10 @@ export function WorkerProfileScreen({ navigation, route }: any) {
         colors={['transparent', 'rgba(10, 10, 15, 0.95)', '#0A0A0F']}
         className="absolute bottom-0 left-0 right-0 p-6 pb-10"
       >
-        <View className="bg-surface border border-white/10 rounded-[32px] p-5 flex-row items-center shadow-2xl shadow-black/50">
-          <View className="mr-6">
-            <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-wider mb-1">Starting Price</Text>
-            <View className="flex-row items-baseline">
-              <Text className="text-white text-2xl font-black">
-                ₹{worker?.hourlyRate || worker?.estimatedStartingPrice || 149}
-              </Text>
-              <Text className="text-textSecondary text-[10px] font-bold ml-1">/hr</Text>
-            </View>
-          </View>
+        <View className="bg-surface border border-white/10 rounded-[32px] p-5 shadow-2xl shadow-black/50">
           <Pressable 
             onPress={() => navigation.navigate('BookingSheet', { workerId: worker?.id, categoryId: worker?.categoryId })}
-            className="flex-1"
+            className="w-full"
           >
             <LinearGradient
               colors={['#E8294C', '#FF453A']}

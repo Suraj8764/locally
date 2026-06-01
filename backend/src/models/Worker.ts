@@ -21,6 +21,7 @@ const workerSchema = new mongoose.Schema({
   },
   workingHoursLabel: { type: String },
   emergencyAvailable: { type: Boolean, default: false },
+  status: { type: String, enum: ['available', 'busy', 'offline'], default: 'offline' },
   profileImage: { type: String },
   profession: { type: String },
   description: { type: String },

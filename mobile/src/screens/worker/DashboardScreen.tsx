@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Switch, Pressable } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { useWorkerStore } from '../../store/workerStore';
@@ -13,21 +13,50 @@ export function DashboardScreen({ navigation }: any) {
   const { isOnline, setOnline } = useWorkerStore();
   
   const { data: worker } = useWorker(user?.id);
+  const [isToggling, setIsToggling] = useState(false);
+  const [workerStatus, setWorkerStatus] = useState<'available' | 'busy' | 'offline'>('offline');
 
-  const toggleOnline = async () => {
-    const newValue = !isOnline;
-    setOnline(newValue);
+  const toggleStatus = async (newStatus: 'available' | 'busy' | 'offline') => {
+    if (isToggling) return;
+    
+    setIsToggling(true);
+    setWorkerStatus(newStatus);
+    setOnline(newStatus !== 'offline');
     
     try {
-      await api.workers.updateStatus(user!.id, newValue);
-      if (newValue) {
-        socketService.emitWorkerOnline(user!.id);
+      if (!user?.id) {
+        console.error('Worker ID not available');
+        setWorkerStatus(workerStatus);
+        setOnline(!newStatus);
+        setIsToggling(false);
+        return;
+      }
+      
+      // If it's a mock worker ID, just update local state without API call
+      if (user.id.startsWith('mock_')) {
+        console.log('Mock worker - updating local status to:', newStatus);
+        if (newStatus !== 'offline') {
+          socketService.emitWorkerOnline(user.id);
+        } else {
+          socketService.emitWorkerOffline(user.id);
+        }
+        setIsToggling(false);
+        return;
+      }
+      
+      await api.workers.updateStatus(user.id, newStatus);
+      if (newStatus !== 'offline') {
+        socketService.emitWorkerOnline(user.id);
       } else {
-        socketService.emitWorkerOffline(user!.id);
+        socketService.emitWorkerOffline(user.id);
       }
     } catch (e) {
+      console.error('Failed to update worker status:', e);
       // Revert on failure
-      setOnline(!newValue);
+      setWorkerStatus(workerStatus);
+      setOnline(!newStatus);
+    } finally {
+      setIsToggling(false);
     }
   };
 
@@ -42,23 +71,69 @@ export function DashboardScreen({ navigation }: any) {
           <View className="items-center">
             <Text className="text-textSecondary text-xs mb-2">Duty Status</Text>
             <View className={`flex-row items-center px-3 py-1 rounded-full border ${
-              isOnline ? 'bg-onlineGreen/10 border-onlineGreen/30' : 'bg-surface border-border'
+              workerStatus === 'available' ? 'bg-onlineGreen/10 border-onlineGreen/30' : 
+              workerStatus === 'busy' ? 'bg-yellow-500/10 border-yellow-500/30' : 
+              'bg-surface border-border'
             }`}>
-              <View className={`w-2 h-2 rounded-full mr-2 ${isOnline ? 'bg-onlineGreen' : 'bg-textSecondary'}`} />
-              <Text className={`font-bold ${isOnline ? 'text-onlineGreen' : 'text-textSecondary'}`}>
-                {isOnline ? 'ONLINE' : 'OFFLINE'}
+              <View className={`w-2 h-2 rounded-full mr-2 ${
+                workerStatus === 'available' ? 'bg-onlineGreen' : 
+                workerStatus === 'busy' ? 'bg-yellow-500' : 
+                'bg-textSecondary'
+              }`} />
+              <Text className={`font-bold ${
+                workerStatus === 'available' ? 'text-onlineGreen' : 
+                workerStatus === 'busy' ? 'text-yellow-500' : 
+                'text-textSecondary'
+              }`}>
+                {workerStatus.toUpperCase()}
               </Text>
             </View>
           </View>
         </View>
 
-        <View className="bg-background rounded-2xl p-4 flex-row items-center justify-between border border-border">
-          <Text className="text-white font-bold text-base">Accepting New Jobs</Text>
-          <Switch 
-            value={isOnline} 
-            onValueChange={toggleOnline} 
-            trackColor={{ true: '#30D158' }}
-          />
+        <View className="bg-background rounded-2xl p-4 border border-border mb-4">
+          <Text className="text-white font-bold text-base mb-3">Set Your Status</Text>
+          <View className="flex-row gap-2">
+            <Pressable
+              onPress={() => toggleStatus('available')}
+              disabled={isToggling}
+              className={`flex-1 py-3 px-4 rounded-xl border ${
+                workerStatus === 'available' 
+                  ? 'bg-onlineGreen border-onlineGreen' 
+                  : 'bg-surface border-border'
+              }`}
+            >
+              <Text className={`text-center font-bold ${
+                workerStatus === 'available' ? 'text-white' : 'text-textSecondary'
+              }`}>Available</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => toggleStatus('busy')}
+              disabled={isToggling}
+              className={`flex-1 py-3 px-4 rounded-xl border ${
+                workerStatus === 'busy' 
+                  ? 'bg-yellow-500 border-yellow-500' 
+                  : 'bg-surface border-border'
+              }`}
+            >
+              <Text className={`text-center font-bold ${
+                workerStatus === 'busy' ? 'text-white' : 'text-textSecondary'
+              }`}>Busy</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => toggleStatus('offline')}
+              disabled={isToggling}
+              className={`flex-1 py-3 px-4 rounded-xl border ${
+                workerStatus === 'offline' 
+                  ? 'bg-surface border-border' 
+                  : 'bg-surface border-border'
+              }`}
+            >
+              <Text className={`text-center font-bold ${
+                workerStatus === 'offline' ? 'text-textSecondary' : 'text-textSecondary'
+              }`}>Offline</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 

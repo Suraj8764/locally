@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View, StyleSheet, Alert, Pressable, Text } from 'react-native';
 import { useCreateBooking } from '../../hooks/useBooking';
@@ -24,11 +25,10 @@ export function BookingSheet({ navigation, route }: any) {
       },
       {
         onSuccess: (booking) => {
-          navigation.replace('Payment', { 
-            bookingId: booking.id, 
-            amount: booking.estimatedPrice || basePrice || 149,
-            categoryId: booking.categoryId || categoryId,
-            isEmergency: booking.isEmergency || data.isEmergency
+          navigation.goBack();
+          navigation.navigate('BookingStatus', { 
+            bookingId: booking.id,
+            status: 'pending'
           });
         },
         onError: () => {

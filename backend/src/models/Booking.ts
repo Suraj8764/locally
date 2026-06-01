@@ -6,7 +6,7 @@ const bookingSchema = new mongoose.Schema({
   categoryId: { type: String, required: true },
   status: { 
     type: String, 
-    enum: ['pending', 'accepted', 'on_the_way', 'started', 'completed', 'cancelled_by_customer', 'cancelled_by_worker'],
+    enum: ['pending', 'accepted', 'rejected', 'cancelled_by_customer', 'cancelled_by_worker'],
     default: 'pending' 
   },
   createdAtMs: { type: Number, default: () => Date.now() },

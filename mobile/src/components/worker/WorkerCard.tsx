@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Linking } from 'react-native';
+import { View, Text, Pressable, Linking, Alert } from 'react-native';
 import { Phone, MessageCircle, Star, MapPin, Clock, ShieldCheck, Briefcase } from 'lucide-react-native';
 import { Worker } from '../../types';
 import { Avatar } from '../ui/Avatar';
@@ -111,11 +111,6 @@ export function WorkerCard({ worker, index = 0, onPress, onBook }: WorkerCardPro
 
             {/* Bottom Info Bar */}
             <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-white/5">
-              <View>
-                <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-wider">Starting from</Text>
-                <Text className="text-accent font-black text-lg">₹{startingPrice}</Text>
-              </View>
-              
               <View className="flex-row items-center gap-2">
                 <Clock size={12} color="#8E8E93" />
                 <Text className="text-textSecondary text-xs font-medium">
@@ -129,16 +124,20 @@ export function WorkerCard({ worker, index = 0, onPress, onBook }: WorkerCardPro
           <View className="flex-row p-3 pt-0 gap-3">
              <View className="flex-row gap-2 mr-auto">
                 <Pressable 
-                  onPress={handleCall}
-                  className="w-11 h-11 bg-surface border border-white/5 rounded-2xl items-center justify-center active:bg-white/10"
+                  onPress={() => {
+                    Alert.alert('Contact Disabled', 'Contact options will be available after the worker accepts your request');
+                  }}
+                  className="w-11 h-11 bg-surface border border-white/5 rounded-2xl items-center justify-center opacity-40"
                 >
-                  <Phone size={20} color="#F5F5F7" />
+                  <Phone size={20} color="#8E8E93" />
                 </Pressable>
                 <Pressable 
-                  onPress={handleWhatsApp}
-                  className="w-11 h-11 bg-onlineGreen/10 border border-onlineGreen/20 rounded-2xl items-center justify-center active:bg-onlineGreen/20"
+                  onPress={() => {
+                    Alert.alert('Contact Disabled', 'Contact options will be available after the worker accepts your request');
+                  }}
+                  className="w-11 h-11 bg-surface border border-white/5 rounded-2xl items-center justify-center opacity-40"
                 >
-                  <MessageCircle size={20} color="#30D158" />
+                  <MessageCircle size={20} color="#8E8E93" />
                 </Pressable>
              </View>
 

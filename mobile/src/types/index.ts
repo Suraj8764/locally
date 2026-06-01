@@ -42,14 +42,13 @@ export type Worker = {
   description?: string;
   estimatedStartingPrice?: number;
   responseTimeMins?: number;
+  status: 'available' | 'busy' | 'offline';
 };
 
 export type BookingStatus = 
   | 'pending'
   | 'accepted'
-  | 'on_the_way'
-  | 'started'
-  | 'completed'
+  | 'rejected'
   | 'cancelled_by_customer'
   | 'cancelled_by_worker';
 

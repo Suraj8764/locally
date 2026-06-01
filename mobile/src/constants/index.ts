@@ -46,5 +46,5 @@ export function getApiBaseUrl() {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-export const GOOGLE_MAPS_API_KEY = 'DUMMY_KEY';
+export const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
 

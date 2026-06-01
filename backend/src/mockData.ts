@@ -27,6 +27,7 @@ export const workers = [
     location: { lat: 21.0587, lng: 86.4958 },
     workingHoursLabel: '7am - 9pm',
     emergencyAvailable: true,
+    status: 'available',
   },
   {
     id: 'w2',
@@ -47,6 +48,7 @@ export const workers = [
     location: { lat: 21.0623, lng: 86.5051 },
     workingHoursLabel: '8am - 10pm',
     emergencyAvailable: true,
+    status: 'available',
   },
   {
     id: 'w3',
@@ -67,6 +69,7 @@ export const workers = [
     location: { lat: 21.0502, lng: 86.5193 },
     workingHoursLabel: '9am - 7pm',
     emergencyAvailable: false,
+    status: 'offline',
   },
   {
     id: 'w4',
@@ -87,6 +90,7 @@ export const workers = [
     location: { lat: 21.0419, lng: 86.4907 },
     workingHoursLabel: '9am - 8pm',
     emergencyAvailable: true,
+    status: 'busy',
   },
   {
     id: 'w5',
@@ -107,6 +111,7 @@ export const workers = [
     location: { lat: 21.0581, lng: 86.5037 },
     workingHoursLabel: '24x7',
     emergencyAvailable: true,
+    status: 'available',
   },
   {
     id: 'w6',
@@ -127,5 +132,6 @@ export const workers = [
     location: { lat: 21.0599, lng: 86.4971 },
     workingHoursLabel: '8am - 11pm',
     emergencyAvailable: true,
+    status: 'available',
   },
 ];

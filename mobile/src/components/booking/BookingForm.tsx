@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Platform, ScrollView, Image as RNImage } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,11 +10,7 @@ import { FormInput } from '../ui/FormInput';
 import { AddressAutocomplete } from '../ui/AddressAutocomplete';
 import { LinearGradient } from 'expo-linear-gradient';
 import { format } from 'date-fns';
-
-const DUMMY_SAVED_ADDRESSES = [
-  { id: '1', label: 'Home', address: 'Sunset Blvd, Beverly Hills, CA' },
-  { id: '2', label: 'Work', address: 'Infinite Loop, Cupertino, CA' },
-];
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const bookingSchema = z.object({
   address: z.string().min(10, 'Address must be at least 10 characters'),
@@ -47,6 +43,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; label: string; address: string }>>([]);
 
   const watchDate = watch('date');
   const watchTime = watch('time');
@@ -54,6 +51,22 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
   const watchImage = watch('imageUri');
 
   const totalPrice = watchEmergency ? basePrice + 150 : basePrice;
+
+  // Load saved addresses from AsyncStorage
+  useEffect(() => {
+    loadSavedAddresses();
+  }, []);
+
+  const loadSavedAddresses = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('savedAddresses');
+      if (saved) {
+        setSavedAddresses(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load saved addresses:', e);
+    }
+  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -78,15 +91,19 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
       <View className="mb-6">
         <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-[2px] mb-3 ml-1">Quick Select</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
-          {DUMMY_SAVED_ADDRESSES.map(addr => (
-            <Pressable 
-              key={addr.id}
-              onPress={() => setValue('address', addr.address)}
-              className="mr-3 bg-surface border border-white/5 px-5 py-3 rounded-2xl flex-row items-center gap-2"
-            >
-              <Text className="text-white font-bold text-xs">{addr.label}</Text>
-            </Pressable>
-          ))}
+          {savedAddresses.length > 0 ? (
+            savedAddresses.map((addr: { id: string; label: string; address: string }) => (
+              <Pressable 
+                key={addr.id}
+                onPress={() => setValue('address', addr.address)}
+                className="mr-3 bg-surface border border-white/5 px-5 py-3 rounded-2xl flex-row items-center gap-2"
+              >
+                <Text className="text-white font-bold text-xs">{addr.label}</Text>
+              </Pressable>
+            ))
+          ) : (
+            <Text className="text-textSecondary text-xs">No saved addresses</Text>
+          )}
         </ScrollView>
       </View>
 
@@ -109,30 +126,64 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
       />
 
       <View className="flex-row gap-4 mb-6">
-        <Pressable 
-          onPress={() => setShowDatePicker(true)}
-          className="flex-1 bg-surface border border-white/10 rounded-2xl p-4"
-        >
-          <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5">Date</Text>
-          <View className="flex-row items-center gap-2">
-            <Calendar size={16} color="#E8294C" />
-            <Text className="text-textPrimary font-bold">{format(watchDate, 'MMM dd, yyyy')}</Text>
-          </View>
-        </Pressable>
+        {Platform.OS === 'web' ? (
+          <>
+            <View className="flex-1 bg-surface border border-white/10 rounded-2xl p-4">
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-2">Date</Text>
+              <input
+                type="date"
+                value={watchDate && !isNaN(watchDate.getTime()) ? format(watchDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
+                onChange={(e) => setValue('date', new Date(e.target.value))}
+                min={format(new Date(), 'yyyy-MM-dd')}
+                className="text-textPrimary font-bold bg-transparent w-full"
+                style={{ color: '#F5F5F7', fontSize: 16, padding: 8 }}
+              />
+            </View>
 
-        <Pressable 
-          onPress={() => setShowTimePicker(true)}
-          className="flex-1 bg-surface border border-white/10 rounded-2xl p-4"
-        >
-          <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5">Time</Text>
-          <View className="flex-row items-center gap-2">
-            <Clock size={16} color="#E8294C" />
-            <Text className="text-textPrimary font-bold">{format(watchTime, 'hh:mm a')}</Text>
-          </View>
-        </Pressable>
+            <View className="flex-1 bg-surface border border-white/10 rounded-2xl p-4">
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-2">Time</Text>
+              <input
+                type="time"
+                value={watchTime && !isNaN(watchTime.getTime()) ? format(watchTime, 'HH:mm') : '12:00'}
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value.split(':');
+                  const newTime = new Date();
+                  newTime.setHours(parseInt(hours || '12'), parseInt(minutes || '0'));
+                  setValue('time', newTime);
+                }}
+                className="text-textPrimary font-bold bg-transparent w-full"
+                style={{ color: '#F5F5F7', fontSize: 16, padding: 8 }}
+              />
+            </View>
+          </>
+        ) : (
+          <>
+            <Pressable 
+              onPress={() => setShowDatePicker(true)}
+              className="flex-1 bg-surface border border-white/10 rounded-2xl p-4 items-center justify-center"
+            >
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5 self-start">Date</Text>
+              <View className="flex-row items-center gap-2 w-full justify-center">
+                <Calendar size={16} color="#E8294C" />
+                <Text className="text-textPrimary font-bold text-center">{format(watchDate, 'MMM dd, yyyy')}</Text>
+              </View>
+            </Pressable>
+
+            <Pressable 
+              onPress={() => setShowTimePicker(true)}
+              className="flex-1 bg-surface border border-white/10 rounded-2xl p-4 items-center justify-center"
+            >
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5 self-start">Time</Text>
+              <View className="flex-row items-center gap-2 w-full justify-center">
+                <Clock size={16} color="#E8294C" />
+                <Text className="text-textPrimary font-bold text-center">{format(watchTime, 'hh:mm a')}</Text>
+              </View>
+            </Pressable>
+          </>
+        )}
       </View>
 
-      {showDatePicker && (
+      {Platform.OS !== 'web' && showDatePicker && (
         <DateTimePicker
           value={watchDate}
           mode="date"
@@ -145,7 +196,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
         />
       )}
 
-      {showTimePicker && (
+      {Platform.OS !== 'web' && showTimePicker && (
         <DateTimePicker
           value={watchTime}
           mode="time"
@@ -206,24 +257,6 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
           {watchEmergency && <Text className="text-white text-[10px] font-black">✓</Text>}
         </View>
       </Pressable>
-
-      <View className="bg-surface border border-white/5 p-6 rounded-[32px] mb-10">
-         <View className="flex-row justify-between mb-2">
-            <Text className="text-textSecondary font-bold text-xs">Service Fee</Text>
-            <Text className="text-textPrimary font-bold text-xs">₹{basePrice}</Text>
-         </View>
-         {watchEmergency && (
-            <View className="flex-row justify-between mb-2">
-              <Text className="text-error font-bold text-xs">Emergency Fee</Text>
-              <Text className="text-error font-bold text-xs">+ ₹150</Text>
-            </View>
-         )}
-         <View className="h-[1px] bg-white/5 my-4" />
-         <View className="flex-row justify-between items-baseline">
-            <Text className="text-white font-black text-lg">Total Estimated</Text>
-            <Text className="text-accent font-black text-2xl">₹{totalPrice}</Text>
-         </View>
-      </View>
 
       <Pressable 
         onPress={handleSubmit(onSubmit)}
