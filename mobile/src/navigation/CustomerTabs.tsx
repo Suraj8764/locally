@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, Grid, Calendar, AlertTriangle, User } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { COLORS } from '../constants';
 
 import { HomeScreen } from '../screens/customer/HomeScreen';
@@ -12,6 +13,7 @@ import { ProfileScreen } from '../screens/customer/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 export function CustomerTabs() {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -28,7 +30,7 @@ export function CustomerTabs() {
         name="HomeTab" 
         component={HomeScreen} 
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('home'),
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />
         }} 
       />
@@ -36,7 +38,7 @@ export function CustomerTabs() {
         name="CategoriesTab" 
         component={CategoriesScreen} 
         options={{
-          tabBarLabel: 'Categories',
+          tabBarLabel: t('categories'),
           tabBarIcon: ({ color, size }) => <Grid color={color} size={size} />
         }} 
       />
@@ -44,7 +46,7 @@ export function CustomerTabs() {
         name="BookingsTab" 
         component={BookingsScreen} 
         options={{
-          tabBarLabel: 'Bookings',
+          tabBarLabel: t('bookings'),
           tabBarIcon: ({ color, size }) => <Calendar color={color} size={size} />
         }} 
       />
@@ -52,7 +54,7 @@ export function CustomerTabs() {
         name="EmergencyTab" 
         component={EmergencyScreen} 
         options={{
-          tabBarLabel: 'SOS',
+          tabBarLabel: t('emergency'),
           tabBarIcon: ({ color, size }) => <AlertTriangle color={color} size={size} />
         }} 
       />
@@ -60,7 +62,7 @@ export function CustomerTabs() {
         name="ProfileTab" 
         component={ProfileScreen} 
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: t('profile'),
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />
         }} 
       />

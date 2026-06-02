@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { ChevronLeft, CheckCircle2, Bell } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export function BookingStatusScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const { bookingId } = route.params;
 
   const { data: booking, isLoading } = useQuery({
@@ -35,7 +37,7 @@ export function BookingStatusScreen({ navigation, route }: any) {
         >
           <ChevronLeft size={24} color="#FFF" />
         </Pressable>
-        <Text className="text-white text-lg font-black">Booking Confirmed</Text>
+        <Text className="text-white text-lg font-black">{t('bookingConfirmed')}</Text>
         <View className="w-12" />
       </View>
 
@@ -47,10 +49,10 @@ export function BookingStatusScreen({ navigation, route }: any) {
 
         {/* Success Message */}
         <Text className="text-white text-3xl font-black tracking-tight mb-3 text-center">
-          Booking Confirmed!
+          {t('bookingConfirmed')}!
         </Text>
         <Text className="text-textSecondary text-base text-center mb-8 max-w-xs">
-          Your booking has been sent to nearby professionals. They will be notified shortly.
+          {t('bookingSent')}
         </Text>
 
         {/* Worker Notification Indicator */}
@@ -61,10 +63,10 @@ export function BookingStatusScreen({ navigation, route }: any) {
             </View>
             <View className="flex-1">
               <Text className="text-white font-bold text-base mb-1">
-                Worker Notified
+                {t('workerNotified')}
               </Text>
               <Text className="text-textSecondary text-sm">
-                Professional will receive your request and respond soon
+                {t('workerNotifiedDesc')}
               </Text>
             </View>
           </View>
@@ -73,7 +75,7 @@ export function BookingStatusScreen({ navigation, route }: any) {
         {/* Booking ID */}
         <View className="bg-surface/50 border border-white/5 rounded-xl px-6 py-3">
           <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1">
-            Booking ID
+            {t('bookingId')}
           </Text>
           <Text className="text-white font-black text-lg">
             #{booking.id.slice(-6).toUpperCase()}
@@ -92,7 +94,7 @@ export function BookingStatusScreen({ navigation, route }: any) {
             className="h-14 rounded-2xl items-center justify-center shadow-xl shadow-accent/40"
           >
             <Text className="text-white font-black text-base uppercase tracking-[3px]">
-              Back to Home
+              {t('backToHome')}
             </Text>
           </LinearGradient>
         </Pressable>

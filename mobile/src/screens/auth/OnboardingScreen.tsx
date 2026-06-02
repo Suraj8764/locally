@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, FlatList, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, SafeAreaView, StatusBar } from 'react-native';
 import { ChevronRight, ArrowRight, Search, MapPin, AlertTriangle } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
@@ -8,25 +9,26 @@ const { width, height } = Dimensions.get('window');
 const slides = [
   {
     id: '1',
-    title: 'Find Trusted Workers Near You',
-    description: 'Instantly connect with verified professionals in your area.',
+    title: 'onboarding1Title',
+    description: 'onboarding1Desc',
     icon: Search
   },
   {
     id: '2',
-    title: 'Book Instantly & Track Realtime',
-    description: 'Schedule services and track workers live on the map.',
+    title: 'onboarding2Title',
+    description: 'onboarding2Desc',
     icon: MapPin
   },
   {
     id: '3',
-    title: 'Emergency Help in Minutes',
-    description: 'Use SOS to get priority assistance immediately.',
+    title: 'onboarding3Title',
+    description: 'onboarding3Desc',
     icon: AlertTriangle
   }
 ];
 
 export function OnboardingScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -127,7 +129,7 @@ export function OnboardingScreen({ navigation }: any) {
                   maxWidth: width * 0.8,
                 }}
               >
-                {item.title}
+                {t(item.title)}
               </Text>
 
               {/* Description */}
@@ -138,7 +140,7 @@ export function OnboardingScreen({ navigation }: any) {
                   maxWidth: width * 0.85,
                 }}
               >
-                {item.description}
+                {t(item.description)}
               </Text>
             </View>
           )}
@@ -174,7 +176,7 @@ export function OnboardingScreen({ navigation }: any) {
               }}
             >
               <Text className="text-white font-bold text-base uppercase tracking-wider">
-                Get Started
+                {t('getStarted')}
               </Text>
               <ArrowRight size={20} color="#FFFFFF" className="ml-2" />
             </Pressable>
@@ -192,7 +194,7 @@ export function OnboardingScreen({ navigation }: any) {
                 }}
               >
                 <Text className="text-white font-bold text-base uppercase tracking-wider">
-                  Next
+                  {t('next')}
                 </Text>
                 <ChevronRight size={20} color="#FFFFFF" className="ml-2" />
               </Pressable>
@@ -202,7 +204,7 @@ export function OnboardingScreen({ navigation }: any) {
                 className="py-3 px-6 items-center"
               >
                 <Text className="text-gray-400 font-semibold text-sm uppercase tracking-wider">
-                  Skip
+                  {t('skip')}
                 </Text>
               </Pressable>
             </>

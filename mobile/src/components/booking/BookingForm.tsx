@@ -11,6 +11,7 @@ import { AddressAutocomplete } from '../ui/AddressAutocomplete';
 import { LinearGradient } from 'expo-linear-gradient';
 import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 
 const bookingSchema = z.object({
   address: z.string().min(10, 'Address must be at least 10 characters'),
@@ -30,6 +31,7 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: BookingFormProps) {
+  const { t } = useTranslation();
   const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
@@ -84,12 +86,12 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="px-6 pb-20">
       <View className="mb-6 mt-2">
-         <Text className="text-white text-2xl font-black tracking-tight mb-1">Book Service</Text>
-         <Text className="text-textSecondary text-xs">Fill in the details to schedule your service.</Text>
+         <Text className="text-white text-2xl font-black tracking-tight mb-1">{t('bookService')}</Text>
+         <Text className="text-textSecondary text-xs">{t('fillDetails')}</Text>
       </View>
 
       <View className="mb-6">
-        <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-[2px] mb-3 ml-1">Quick Select</Text>
+        <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-[2px] mb-3 ml-1">{t('quickSelect')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
           {savedAddresses.length > 0 ? (
             savedAddresses.map((addr: { id: string; label: string; address: string }) => (
@@ -108,8 +110,8 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
       </View>
 
       <AddressAutocomplete 
-        label="Service Location"
-        placeholder="Search house no, building, area..."
+        label={t('serviceLocation')}
+        placeholder={t('searchLocation')}
         onAddressSelect={(address) => setValue('address', address)}
         error={errors.address?.message}
       />
@@ -117,8 +119,8 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
       <FormInput<BookingFormData> 
         name="problemDescription"
         control={control}
-        label="What's the issue?"
-        placeholder="Describe the problem in detail..."
+        label={t('whatsIssue')}
+        placeholder={t('describeProblem')}
         error={errors.problemDescription?.message}
         multiline
         numberOfLines={3}
@@ -129,7 +131,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
         {Platform.OS === 'web' ? (
           <>
             <View className="flex-1 bg-surface border border-white/10 rounded-2xl p-4">
-              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-2">Date</Text>
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-2">{t('date')}</Text>
               <input
                 type="date"
                 value={watchDate && !isNaN(watchDate.getTime()) ? format(watchDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
@@ -141,7 +143,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
             </View>
 
             <View className="flex-1 bg-surface border border-white/10 rounded-2xl p-4">
-              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-2">Time</Text>
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-2">{t('time')}</Text>
               <input
                 type="time"
                 value={watchTime && !isNaN(watchTime.getTime()) ? format(watchTime, 'HH:mm') : '12:00'}
@@ -162,7 +164,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
               onPress={() => setShowDatePicker(true)}
               className="flex-1 bg-surface border border-white/10 rounded-2xl p-4 items-center justify-center"
             >
-              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5 self-start">Date</Text>
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5 self-start">{t('date')}</Text>
               <View className="flex-row items-center gap-2 w-full justify-center">
                 <Calendar size={16} color="#E8294C" />
                 <Text className="text-textPrimary font-bold text-center">{format(watchDate, 'MMM dd, yyyy')}</Text>
@@ -173,7 +175,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
               onPress={() => setShowTimePicker(true)}
               className="flex-1 bg-surface border border-white/10 rounded-2xl p-4 items-center justify-center"
             >
-              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5 self-start">Time</Text>
+              <Text className="text-textSecondary text-[10px] font-bold uppercase tracking-widest mb-1.5 self-start">{t('time')}</Text>
               <View className="flex-row items-center gap-2 w-full justify-center">
                 <Clock size={16} color="#E8294C" />
                 <Text className="text-textPrimary font-bold text-center">{format(watchTime, 'hh:mm a')}</Text>
@@ -208,7 +210,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
         />
       )}
 
-      <ProfileSection title="Photos (Optional)" className="mb-6">
+      <ProfileSection title={t('photosOptional')} className="mb-6">
         {watchImage ? (
           <View className="relative w-full h-48 rounded-3xl overflow-hidden border border-white/10">
             <RNImage source={{ uri: watchImage }} className="w-full h-full" />
@@ -227,7 +229,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
             <View className="w-12 h-12 bg-background rounded-full items-center justify-center mb-2">
                <Camera size={24} color="#8E8E93" />
             </View>
-            <Text className="text-textSecondary text-xs font-bold uppercase tracking-widest">Tap to upload photos</Text>
+            <Text className="text-textSecondary text-xs font-bold uppercase tracking-widest">{t('tapUpload')}</Text>
           </Pressable>
         )}
       </ProfileSection>
@@ -244,10 +246,10 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
           </View>
           <View className="ml-4">
             <Text className={`font-black uppercase tracking-tight text-sm ${watchEmergency ? 'text-error' : 'text-white'}`}>
-              Emergency SOS
+              {t('emergencySOS')}
             </Text>
             <Text className={`text-[10px] font-bold ${watchEmergency ? 'text-error/80' : 'text-textSecondary'}`}>
-              Priority allocation, extra ₹150 applies
+              {t('emergencyDesc')}
             </Text>
           </View>
         </View>
@@ -269,7 +271,7 @@ export function BookingForm({ onSubmit, basePrice = 199, isSubmitting }: Booking
           className="h-16 rounded-[24px] items-center justify-center shadow-xl shadow-accent/40"
         >
           <Text className="text-white font-black text-base uppercase tracking-[3px]">
-            {isSubmitting ? 'Confirming...' : 'Confirm Booking'}
+            {isSubmitting ? t('confirming') : t('confirmBooking')}
           </Text>
         </LinearGradient>
       </Pressable>

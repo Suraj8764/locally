@@ -105,7 +105,7 @@ export function HomeScreen({ navigation }: any) {
         >
           {/* Functional Real-Time Search Bar */}
           <PremiumSearchBar 
-            placeholder="Search Plumber, Electrician..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChangeText={(text) => setSearchQuery(text)}
             onClear={() => setSearchQuery('')}
@@ -120,23 +120,23 @@ export function HomeScreen({ navigation }: any) {
             <View className="px-6 flex-row items-center justify-between mb-5">
               <View>
                 <Text className="text-textPrimary font-black text-2xl tracking-tight">
-                  Categories
+                  {t('categories')}
                 </Text>
                 <Text className="text-textSecondary text-[10px] uppercase tracking-widest font-bold">
-                  What do you need today?
+                  {t('whatDoYouNeed')}
                 </Text>
               </View>
               <Pressable 
                 onPress={() => navigation.navigate('CategoriesTab')}
                 className="bg-surface border border-border px-4 py-2 rounded-xl"
               >
-                <Text className="text-accent font-bold text-xs">View All</Text>
+                <Text className="text-accent font-bold text-xs">{t('viewAll')}</Text>
               </Pressable>
             </View>
             
             {filteredCategories.length === 0 ? (
               <View className="px-6">
-                <Text className="text-textSecondary text-xs italic">No matching categories found</Text>
+                <Text className="text-textSecondary text-xs italic">{t('noMatchingCategories')}</Text>
               </View>
             ) : (
               <ScrollView 
@@ -163,22 +163,22 @@ export function HomeScreen({ navigation }: any) {
             <View className="flex-row items-center justify-between mb-5">
               <View>
                 <Text className="text-textPrimary font-black text-2xl tracking-tight">
-                  Nearby Workers
+                  {t('nearbyWorkers')}
                 </Text>
                 <Text className="text-textSecondary text-[10px] uppercase tracking-widest font-bold">
-                  Top professionals near you
+                  {t('topProfessionals')}
                 </Text>
               </View>
               <View className="bg-accent/10 border border-accent/30 px-3 py-1.5 rounded-full">
-                <Text className="text-accent text-[10px] font-black uppercase">{radiusKm}KM Radius</Text>
+                <Text className="text-accent text-[10px] font-black uppercase">{radiusKm}{t('kmRadius')}</Text>
               </View>
             </View>
 
             {!coords ? (
               <EmptyState 
-                title="Location Required" 
-                description="We need your location to find nearby workers." 
-                actionLabel="Enable Location"
+                title={t('locationRequired')} 
+                description={t('locationRequiredDesc')} 
+                actionLabel={t('enableLocation')}
                 onAction={refreshLoc}
               />
             ) : workersLoading ? (
@@ -205,8 +205,8 @@ export function HomeScreen({ navigation }: any) {
               <View className="bg-surface border border-border/50 p-8 rounded-3xl items-center">
                 <Text className="text-textSecondary text-center font-medium">
                   {searchQuery.length > 0 
-                    ? `No nearby professionals match "${searchQuery}"`
-                    : "No active workers found in your area. Try increasing search radius."}
+                    ? `${t('noMatchingProfessionals')} "${searchQuery}"`
+                    : t('noActiveWorkers')}
                 </Text>
               </View>
             ) : (
@@ -225,10 +225,10 @@ export function HomeScreen({ navigation }: any) {
           <View className="px-6 pb-20">
             <View className="mb-5">
               <Text className="text-textPrimary font-black text-2xl tracking-tight">
-                Available Now
+                {t('availableNow')}
               </Text>
               <Text className="text-textSecondary text-[10px] uppercase tracking-widest font-bold">
-                Instantly bookable services
+                {t('instantlyBookable')}
               </Text>
             </View>
 
@@ -245,7 +245,7 @@ export function HomeScreen({ navigation }: any) {
               filteredWorkers.length <= 3 && filteredWorkers.length > 0 ? (
                  <View className="bg-surface/50 border border-border/50 p-6 rounded-3xl items-center">
                     <Text className="text-textSecondary text-xs font-bold text-center uppercase tracking-widest">
-                      Check back later for more updates
+                      {t('checkBackLater')}
                     </Text>
                  </View>
               ) : null

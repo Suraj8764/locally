@@ -172,7 +172,7 @@ export function ProfileScreen({ navigation }: any) {
   return (
     <View className="flex-1 bg-background">
       <View className="pt-14 px-6 pb-8 bg-surface border-b border-white/5">
-        <Text className="text-3xl font-black text-white mb-6">Profile</Text>
+        <Text className="text-3xl font-black text-white mb-6">{t('myProfile')}</Text>
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Avatar url={user?.profileImage} name={user?.displayName || 'Customer'} size={72} />
@@ -198,13 +198,13 @@ export function ProfileScreen({ navigation }: any) {
         {/* My Requests Section */}
         <View className="mb-6">
           <Text className="text-textSecondary font-black uppercase tracking-[2px] text-[10px] mb-4 ml-1">
-            My Requests
+            {t('myRequests')}
           </Text>
           <View className="bg-surface border border-border rounded-2xl overflow-hidden">
             <Pressable onPress={() => handleMyRequests('pending')} className="flex-row items-center p-4 border-b border-border">
               <View className="w-3 h-3 rounded-full bg-yellow-500 mr-3" />
               <View className="flex-1">
-                <Text className="text-white font-bold">Pending Requests</Text>
+                <Text className="text-white font-bold">{t('pending')}</Text>
                 <Text className="text-textSecondary text-xs">{requestCounts.pending} request{requestCounts.pending !== 1 ? 's' : ''} waiting</Text>
               </View>
               <ChevronRight size={20} color="#8E8E93" />
@@ -212,7 +212,7 @@ export function ProfileScreen({ navigation }: any) {
             <Pressable onPress={() => handleMyRequests('accepted')} className="flex-row items-center p-4 border-b border-border">
               <View className="w-3 h-3 rounded-full bg-green-500 mr-3" />
               <View className="flex-1">
-                <Text className="text-white font-bold">Accepted Requests</Text>
+                <Text className="text-white font-bold">{t('accepted')}</Text>
                 <Text className="text-textSecondary text-xs">{requestCounts.accepted} request{requestCounts.accepted !== 1 ? 's' : ''} accepted</Text>
               </View>
               <ChevronRight size={20} color="#8E8E93" />
@@ -220,7 +220,7 @@ export function ProfileScreen({ navigation }: any) {
             <Pressable onPress={() => handleMyRequests('completed')} className="flex-row items-center p-4 border-b border-border">
               <View className="w-3 h-3 rounded-full bg-blue-500 mr-3" />
               <View className="flex-1">
-                <Text className="text-white font-bold">Completed Requests</Text>
+                <Text className="text-white font-bold">{t('completed')}</Text>
                 <Text className="text-textSecondary text-xs">{requestCounts.completed} completed</Text>
               </View>
               <ChevronRight size={20} color="#8E8E93" />
@@ -228,7 +228,7 @@ export function ProfileScreen({ navigation }: any) {
             <Pressable onPress={() => handleMyRequests('rejected')} className="flex-row items-center p-4">
               <View className="w-3 h-3 rounded-full bg-red-500 mr-3" />
               <View className="flex-1">
-                <Text className="text-white font-bold">Rejected Requests</Text>
+                <Text className="text-white font-bold">{t('rejected')}</Text>
                 <Text className="text-textSecondary text-xs">{requestCounts.rejected} rejected</Text>
               </View>
               <ChevronRight size={20} color="#8E8E93" />
@@ -239,7 +239,7 @@ export function ProfileScreen({ navigation }: any) {
         {/* Emergency Contacts Section */}
         <View className="mb-6">
           <Text className="text-textSecondary font-black uppercase tracking-[2px] text-[10px] mb-4 ml-1">
-            Emergency Quick Access
+            {t('emergencyContacts')}
           </Text>
           <View className="grid grid-cols-3 gap-3">
             {EMERGENCY_CONTACTS.map((contact) => (
@@ -260,7 +260,7 @@ export function ProfileScreen({ navigation }: any) {
         {/* Favorite Workers Section */}
         <View className="mb-6">
           <Text className="text-textSecondary font-black uppercase tracking-[2px] text-[10px] mb-4 ml-1">
-            Favorite Workers
+            {t('favoriteWorkers')}
           </Text>
           {favoriteWorkers.length > 0 ? (
             <View className="bg-surface border border-border rounded-2xl overflow-hidden">
@@ -284,7 +284,7 @@ export function ProfileScreen({ navigation }: any) {
           ) : (
             <View className="bg-surface border border-border rounded-2xl p-6 items-center">
               <Heart size={32} color="#8E8E93" />
-              <Text className="text-textSecondary font-bold text-sm mt-2">No favorite workers yet</Text>
+              <Text className="text-textSecondary font-bold text-sm mt-2">{t('noFavoriteWorkers')}</Text>
               <Text className="text-textSecondary text-xs mt-1">Save workers you like for quick access</Text>
             </View>
           )}
@@ -297,13 +297,13 @@ export function ProfileScreen({ navigation }: any) {
               <View className="flex-1">
                 <Text className="text-white font-black text-lg mb-1">Earn With Us</Text>
                 <Text className="text-textSecondary text-sm mb-4">
-                  Register as a Worker and receive customer requests from nearby users.
+                  {t('becomeServiceProvider')}
                 </Text>
                 <Pressable
                   onPress={handleBecomeWorker}
                   className="bg-accent px-4 py-2.5 rounded-xl self-start"
                 >
-                  <Text className="text-white font-black text-sm uppercase tracking-wider">Become a Worker</Text>
+                  <Text className="text-white font-black text-sm uppercase tracking-wider">{t('becomeServiceProvider')}</Text>
                 </Pressable>
               </View>
               <Briefcase size={32} color="#E8294C" />
@@ -313,12 +313,12 @@ export function ProfileScreen({ navigation }: any) {
 
         {/* Preferences Section */}
         <Text className="text-textSecondary font-black uppercase tracking-[2px] text-[10px] mb-4 ml-1">
-          Preferences
+          Settings
         </Text>
         <View className="bg-surface border border-border rounded-2xl overflow-hidden mb-6">
           <View className="flex-row items-center p-4 border-b border-border">
             <Bell size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Push Notifications</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('notifications')}</Text>
             <Switch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
@@ -328,7 +328,7 @@ export function ProfileScreen({ navigation }: any) {
           
           <View className="flex-row items-center p-4">
             <Globe size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Language</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('language')}</Text>
             <View className="flex-row gap-2">
               <Pressable onPress={() => changeLanguage('en')} className={`px-2 py-1 rounded ${i18n.language === 'en' ? 'bg-accent/20 border-accent border' : 'bg-background border border-border'}`}>
                 <Text className={i18n.language === 'en' ? 'text-accent' : 'text-textSecondary'}>EN</Text>
@@ -345,49 +345,49 @@ export function ProfileScreen({ navigation }: any) {
 
         {/* Support & Legal Section */}
         <Text className="text-textSecondary font-black uppercase tracking-[2px] text-[10px] mb-4 ml-1">
-          Support & Legal
+          {t('supportLegal')}
         </Text>
         <View className="bg-surface border border-border rounded-2xl overflow-hidden mb-6">
           <Pressable onPress={() => handleSupportItem('Help Center')} className="flex-row items-center p-4 border-b border-border">
             <HelpCircle size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Help Center</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('helpCenter')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
           <Pressable onPress={() => handleSupportItem('Contact Support')} className="flex-row items-center p-4 border-b border-border">
             <Phone size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Contact Support</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('contactSupport')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
           <Pressable onPress={() => handleSupportItem('Privacy Policy')} className="flex-row items-center p-4 border-b border-border">
             <HelpCircle size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Privacy Policy</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('privacyPolicy')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
           <Pressable onPress={() => handleSupportItem('Terms & Conditions')} className="flex-row items-center p-4 border-b border-border">
             <HelpCircle size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Terms & Conditions</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('termsConditions')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
           <Pressable onPress={() => handleSupportItem('About App')} className="flex-row items-center p-4">
             <HelpCircle size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">About App</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('aboutApp')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
         </View>
 
         {/* Account Section */}
         <Text className="text-textSecondary font-black uppercase tracking-[2px] text-[10px] mb-4 ml-1">
-          Account
+          {t('account')}
         </Text>
         <View className="bg-surface border border-border rounded-2xl overflow-hidden mb-6">
           <Pressable onPress={handleChangePhone} className="flex-row items-center p-4 border-b border-border">
             <Phone size={20} color="#8E8E93" />
-            <Text className="text-white flex-1 ml-3 font-bold">Change Phone Number</Text>
+            <Text className="text-white flex-1 ml-3 font-bold">{t('changePhone')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
           <Pressable onPress={handleDeleteAccount} className="flex-row items-center p-4">
             <Trash2 size={20} color="#FF453A" />
-            <Text className="text-error flex-1 ml-3 font-bold">Delete Account</Text>
+            <Text className="text-error flex-1 ml-3 font-bold">{t('deleteAccount')}</Text>
             <ChevronRight size={20} color="#8E8E93" />
           </Pressable>
         </View>
@@ -397,7 +397,7 @@ export function ProfileScreen({ navigation }: any) {
           className="bg-error/10 border border-error/30 flex-row items-center justify-center p-4 rounded-2xl mb-10"
         >
           <LogOut size={20} color="#FF453A" />
-          <Text className="text-error font-bold ml-2">Log Out</Text>
+          <Text className="text-error font-bold ml-2">{t('logout')}</Text>
         </Pressable>
           </>
         )}
